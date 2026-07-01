@@ -103,30 +103,29 @@ export default function DetalheFesta() {
           when={festa()}
           fallback={<p class="vazio">Festa não encontrada.</p>}
         >
-          {(f) => (
-            <>
+          <>
               <div class="cabecalho-pagina">
                 <div>
-                  <h1>{f().nome}</h1>
+                  <h1>{festa()!.nome}</h1>
                   <p class="periodo">
-                    🗓️ {formatarData(f().data_inicio)} →{" "}
-                    {formatarData(f().data_fim)}
+                    🗓️ {formatarData(festa()!.data_inicio)} →{" "}
+                    {formatarData(festa()!.data_fim)}
                   </p>
-                  <Show when={f().cliente}>
-                    <p class="descricao">👤 {f().cliente}</p>
+                  <Show when={festa()!.cliente}>
+                    <p class="descricao">👤 {festa()!.cliente}</p>
                   </Show>
-                  <Show when={f().local}>
-                    <p class="descricao">📍 {f().local}</p>
+                  <Show when={festa()!.local}>
+                    <p class="descricao">📍 {festa()!.local}</p>
                   </Show>
-                  <Show when={f().observacoes}>
-                    <p class="descricao">📝 {f().observacoes}</p>
+                  <Show when={festa()!.observacoes}>
+                    <p class="descricao">📝 {festa()!.observacoes}</p>
                   </Show>
                 </div>
                 <div class="festa-controles">
                   <label class="inline">
                     Status
                     <select
-                      value={f().status}
+                      value={festa()!.status}
                       onChange={(e) =>
                         mudarStatus(e.currentTarget.value as StatusFesta)
                       }
@@ -160,8 +159,7 @@ export default function DetalheFesta() {
                   )}
                 </For>
               </div>
-            </>
-          )}
+          </>
         </Show>
       </Show>
     </div>
