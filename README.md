@@ -1,74 +1,71 @@
-# SolidStart
+# 🍺 Choperia — Gestão de Festas e Equipamentos
 
-![Netlify + Solid](https://user-images.githubusercontent.com/43764894/223558736-6cf48156-2316-419d-8be9-e318ecf0e4be.png)
+Sistema para uma choperia gerenciar **festas/eventos** e o **estoque de equipamentos**
+distribuído em 4 áreas: **chopeira**, **barris**, **cilindro (CO₂)** e **kit de extração**.
 
+Cada festa reúne equipamentos dessas áreas. O sistema controla a disponibilidade de cada
+item e **impede reservar o mesmo equipamento em duas festas com datas sobrepostas**.
 
+## Tecnologias
 
-A Solid Quickstart template that will get you started with everything you need to build a Solid project, powered by [`solid-start`](https://github.com/ryansolid/solid-start/tree/master/packages/solid-start);
+- **SolidStart** (Solid.js + Vite), deploy na Netlify.
+- **Supabase** (PostgreSQL + Auth + Row Level Security) como backend.
+- Autenticação por e-mail/senha (login simples).
 
-Click the below button to quickly create a new repo, create a new Netlify project, and deploy!
+## Configuração
 
-[![Deploy to Netlify Button](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/netlify-templates/solid-quickstart?utm_campaign=template-team&utm_source=dtn-button&utm_medium=dtn-button&utm_term=solid-qt-dtn-button&utm_content=solid-qt-dtn-button)
+1. Instale as dependências:
 
-## Table of Contents
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Building](#building)
-- [Deploying using the Netlify CLI](#deploying-using-the-netlify-cli)
+   ```
+   npm install
+   ```
 
-## Project Structure
+2. Copie `.env.example` para `.env` e preencha com as credenciais do seu projeto Supabase:
 
-Inside of your Solidjs project, you'll see the following folders and files:
+   ```
+   VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
+   VITE_SUPABASE_ANON_KEY=sua-chave-publishable-ou-anon
+   ```
+
+3. Rode em desenvolvimento:
+
+   ```
+   npm run dev
+   ```
+
+## Modelo de dados (Supabase)
+
+- `equipamentos` — itens do estoque (`tipo`, `nome`, `descricao`, `status`).
+- `festas` — eventos (`nome`, `cliente`, `local`, `data_inicio`, `data_fim`, `status`).
+- `festa_equipamentos` — alocação de equipamentos por festa.
+- Função `equipamentos_disponiveis(festa_id)` — retorna os itens disponíveis para a festa,
+  respeitando o status e o conflito de datas com outras festas.
+
+Todas as tabelas usam Row Level Security, isolando os dados por usuário.
+
+## Estrutura
 
 ```
-/
-├── public/
-│   └── favicon.ico
-├── src/
-│   ├── components/
-│   │   └── Counter.css
-│   │   └── Counter.tsx
-│   └── routes/
-│       └── [...404].tsx
-│       └── index.tsx
-├── entry-client.tsx
-├── entry-server.tsx
-├── root.css
-├── root.tsx
-├── package.json
-└── vite.config.json
+src/
+├── lib/            # cliente Supabase, tipos, acesso a dados e sessão
+├── components/     # Layout, AuthGuard, cartões e áreas de equipamento
+└── routes/
+    ├── login.tsx
+    ├── index.tsx           # painel
+    ├── festas/             # lista, cadastro e detalhe (4 áreas)
+    └── equipamentos/       # estoque e cadastro
 ```
 
-## Getting Started
+## Testes
 
-If you want to get started locally, you can clone the project, install the dependencies and run the dev command!
+- `cypress/e2e/basic.cy.ts` cobre o redirecionamento para o login e a exibição do
+  formulário de autenticação.
 
-```
-git clone https://github.com/netlify-templates/solid-quickstart.git
-cd solid-quickstart
-npm install
-npm run dev
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+## Deploy
 
-## Building
+O projeto usa o adaptador `solid-start-netlify`. Configure as variáveis de ambiente
+`VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` no painel da Netlify e faça o deploy normalmente
+(`npm run build`).
 
-Solid apps are built with _adapters_, which optimise your project for deployment to different environments.
-
-By default, `npm run build` will generate a Node app that you can run with `npm start`. To use a different adapter, add it to the `devDependencies` in `package.json` and specify in your `vite.config.js`.
-
-## Deploying using the Netlify CLI
-- Install the Netlify CLI globally `npm install netlify-cli -g`
-    
-- Run `npm run build`
-
-- Then use the `netlify deploy` for a deploy preview link or `netlify deploy --prod` to deploy to production
-
-Here are a few other ways you can deploy this template:
-    
-- Use the Netlify CLI's create from template command `netlify sites:create-template solid-quickstart` which will create a repo, Netlify project, and deploy it
-    
-- If you want to utilize continuous deployment through GitHub webhooks, run the Netlify command `netlify init` to create a new project based on your repo or `netlify link` to connect your repo to an existing project
-
-Hope this template helps :) Happy coding 👩🏻‍💻!
+> Observação: o `solid-start@0.1.x` roda o servidor de desenvolvimento melhor no Node 18/20.
+> No Node 22 o `npm run dev` pode falhar ao ajustar a global `crypto`; o `npm run build` funciona.
