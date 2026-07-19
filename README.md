@@ -1,71 +1,84 @@
-# 🍺 Choperia — Gestão de Festas e Equipamentos
+# 🟨 BACKROOMS CRAFT
 
-Sistema para uma choperia gerenciar **festas/eventos** e o **estoque de equipamentos**
-distribuído em 4 áreas: **chopeira**, **barris**, **cilindro (CO₂)** e **kit de extração**.
+> Você tropeçou e atravessou o chão da realidade. Agora é **você contra o Vazio**.
 
-Cada festa reúne equipamentos dessas áreas. O sistema controla a disponibilidade de cada
-item e **impede reservar o mesmo equipamento em duas festas com datas sobrepostas**.
+Jogo voxel de ação em primeira pessoa (estilo Minecraft) com tema **Backrooms**.
+Nada de sobrevivência pacífica: aqui os monstros caçam **você** — colete o que precisa,
+quebre paredes, erga barricadas, lute e **escape nível por nível**.
 
-## Tecnologias
+**Funciona direto no navegador — PC e celular**, sem instalar nada.
 
-- **SolidStart** (Solid.js + Vite), deploy na Netlify.
-- **Supabase** (PostgreSQL + Auth + Row Level Security) como backend.
-- Autenticação por e-mail/senha (login simples).
+## 🎮 Como jogar
 
-## Configuração
+### No celular 📱
+- **Joystick** (lado esquerdo): andar — empurre até a borda para **correr**
+- **Arrastar** (lado direito): olhar / mirar
+- **⚔️ atacar**: golpeia monstros ou quebra o bloco mirado (segure para repetir)
+- **⬆️ pular** · **🧱 bloco**: coloca uma barricada · **🥤 beber**: Água de Amêndoas
+- Dica: jogue na horizontal
 
-1. Instale as dependências:
+### No PC 🖥️
+- **WASD** anda · **Shift** corre · **Espaço** pula
+- **Clique esquerdo**: atacar / quebrar bloco (segure)
+- **Clique direito**: colocar bloco
+- **F**: beber Água de Amêndoas
 
-   ```
-   npm install
-   ```
+## 📜 Regras do Vazio
 
-2. Copie `.env.example` para `.env` e preencha com as credenciais do seu projeto Supabase:
+- Em cada nível, colete os **itens do objetivo** (fusíveis, chaves, válvulas…) para
+  abrir o **buraco noclip** — o portal escuro que leva ao próximo nível.
+- **Vida** ❤️: monstros e pisos eletrificados machucam. **Água de Amêndoas** 🥤 cura.
+- **Fôlego** 🟡: correr cansa.
+- **Sanidade** 🟣: o escuro e a presença de monstros corroem sua mente. Com a sanidade
+  baixa, os monstros ficam mais rápidos e vêm de mais longe. Se zerar… a vida escorre.
+- **Blocos** 🧱: quebre paredes e caixas para ganhar blocos e construa barricadas
+  contra as matilhas.
+- Seu progresso fica salvo no navegador (níveis destravados).
 
-   ```
-   VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
-   VITE_SUPABASE_ANON_KEY=sua-chave-publishable-ou-anon
-   ```
+## 🗺️ Os níveis
 
-3. Rode em desenvolvimento:
+| Nível | Lugar | Habitantes |
+|---|---|---|
+| **0** | As Salas Amarelas — labirinto de papel de parede e zumbido eterno | 😁 Sorridentes, que vivem nas zonas escuras |
+| **1** | O Armazém — concreto, névoa e pilares infinitos | 🐺 Cães do Vazio, rápidos e em bando |
+| **2** | Tubulações — túneis quentes e vapor | 🫥 Ladrões de Pele, que fingem estar parados |
+| **3** | A Central Elétrica — geradores e pisos eletrificados | 👤 Facelings, fortes e sem rosto |
+| **!** | A Fuga — arena onde a realidade sangra | 💀 O **Guardião do Vazio** (chefe final) |
 
-   ```
-   npm run dev
-   ```
+Cada nível tem **mapa gerado proceduralmente**, paleta, armas e perigos próprios.
+A arma evolui a cada nível: cano de metal → pé de cabra → chave inglesa → machado de
+incêndio → **Machado do Êxodo**.
 
-## Modelo de dados (Supabase)
+## 🚀 Rodando
 
-- `equipamentos` — itens do estoque (`tipo`, `nome`, `descricao`, `status`).
-- `festas` — eventos (`nome`, `cliente`, `local`, `data_inicio`, `data_fim`, `status`).
-- `festa_equipamentos` — alocação de equipamentos por festa.
-- Função `equipamentos_disponiveis(festa_id)` — retorna os itens disponíveis para a festa,
-  respeitando o status e o conflito de datas com outras festas.
+É um site estático — não tem build:
 
-Todas as tabelas usam Row Level Security, isolando os dados por usuário.
+```bash
+# qualquer servidor estático serve, por exemplo:
+python3 -m http.server 8080
+# e abra http://localhost:8080
+```
 
-## Estrutura
+Ou publique no **GitHub Pages** (o workflow em `.github/workflows/pages.yml` já faz isso
+a cada push).
+
+## 🧱 Tecnologia
+
+- [Three.js](https://threejs.org/) (vendorizado em `lib/`, sem CDN) + JavaScript puro (ES modules)
+- Engine voxel própria: malha por chunks com face culling, colisão AABB, raycast de blocos
+- Mapas procedurais com seed fixa (labirinto, armazém, túneis, salas, arena)
+- Sons 100% procedurais via WebAudio — nenhum asset externo
+- Controles de toque (joystick virtual) e teclado/mouse
 
 ```
 src/
-├── lib/            # cliente Supabase, tipos, acesso a dados e sessão
-├── components/     # Layout, AuthGuard, cartões e áreas de equipamento
-└── routes/
-    ├── login.tsx
-    ├── index.tsx           # painel
-    ├── festas/             # lista, cadastro e detalhe (4 áreas)
-    └── equipamentos/       # estoque e cadastro
+├── main.js            # loop do jogo e estados (menu/intro/jogo/morte/vitória)
+├── engine/            # world (voxels+mesh), player, física, raycast, input
+├── game/              # níveis, geração de mapas, monstros, itens
+├── ui/hud.js          # barras, contadores, mensagens
+└── audio/sounds.js    # sons procedurais
 ```
 
-## Testes
+---
 
-- `cypress/e2e/basic.cy.ts` cobre o redirecionamento para o login e a exibição do
-  formulário de autenticação.
-
-## Deploy
-
-O projeto usa o adaptador `solid-start-netlify`. Configure as variáveis de ambiente
-`VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY` no painel da Netlify e faça o deploy normalmente
-(`npm run build`).
-
-> Observação: o `solid-start@0.1.x` roda o servidor de desenvolvimento melhor no Node 18/20.
-> No Node 22 o `npm run dev` pode falhar ao ajustar a global `crypto`; o `npm run build` funciona.
+*Feito com ☕ e medo de carpete úmido.*
