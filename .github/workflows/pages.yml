@@ -1,0 +1,32 @@
+name: Publicar no GitHub Pages
+
+# Publica o jogo na branch gh-pages (o GitHub Pages serve essa branch).
+on:
+  push:
+    branches:
+      - main
+      - claude/backrooms-minecraft-game-2nkaiy
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publicar na branch gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan gh-pages
+          git rm -rq --cached .
+          rm -rf .github
+          git add -A
+          git commit -m "deploy: ${GITHUB_SHA}"
+          git push -f origin gh-pages
