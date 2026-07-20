@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a06">
+<title>Backrooms Craft — Você contra o Vazio</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0a0a06; touch-action:none;
+    font-family:'Courier New', monospace; color:#e8dfa0; user-select:none; -webkit-user-select:none; }
+  #game-canvas { position:fixed; inset:0; width:100%; height:100%; display:block; }
+
+  /* ---------- overlays ---------- */
+  .overlay { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center;
+    justify-content:flex-start; text-align:center; padding:24px; z-index:50;
+    overflow-y:auto; touch-action:pan-y; }
+  .overlay::before, .overlay::after { content:''; flex:1 0 8px; }
+  .hidden { display:none !important; }
+
+  #menu { background:
+    radial-gradient(ellipse at 50% 30%, #2a2410 0%, #0a0a06 75%);
+  }
+  #menu h1 { font-size:clamp(34px, 9vw, 72px); letter-spacing:4px; color:#f5e97a;
+    text-shadow:0 0 24px #b8a52a, 0 0 60px #5a4d0a; margin-bottom:6px; }
+  #menu h2 { font-size:clamp(13px, 3.5vw, 18px); font-weight:normal; color:#a89b55; margin-bottom:28px; }
+  .flicker { animation:flick 4s infinite; }
+  @keyframes flick { 0%,93%,100%{opacity:1} 94%{opacity:.35} 95%{opacity:1} 97%{opacity:.5} 98%{opacity:1} }
+
+  .btn { display:block; width:min(320px, 82vw); margin:7px auto; padding:15px 18px;
+    background:#1c1a0e; border:2px solid #6b5f2a; color:#f0e68c; font-family:inherit;
+    font-size:17px; letter-spacing:1px; cursor:pointer; transition:all .15s; }
+  .btn:hover, .btn:active { background:#3a3316; border-color:#d4c34a; box-shadow:0 0 18px #6b5f2a; }
+  .btn:disabled { opacity:.35; cursor:default; box-shadow:none; }
+  .btn .lvl-sub { display:block; font-size:11px; color:#8f854e; margin-top:3px; }
+
+  #menu .note { margin-top:20px; font-size:12px; color:#6b643a; max-width:420px; line-height:1.6; }
+
+  #intro { background:rgba(4,4,2,.93); }
+  #intro .lvl-tag { font-size:14px; color:#8f854e; letter-spacing:3px; margin-bottom:8px; }
+  #intro h1 { font-size:clamp(26px, 7vw, 52px); color:#f5e97a; margin-bottom:14px; text-shadow:0 0 20px #7a6d1a; }
+  #intro p { max-width:520px; line-height:1.7; font-size:15px; color:#cfc484; margin-bottom:10px; }
+  #intro .obj { color:#7fd4a0; font-size:15px; margin-top:10px; }
+  #intro .tip { color:#6b643a; font-size:12px; margin-top:16px; }
+
+  #death { background:rgba(20,0,0,.88); }
+  #death h1 { font-size:clamp(30px, 8vw, 60px); color:#e04040; text-shadow:0 0 30px #7a0a0a; margin-bottom:12px; }
+  #death p { color:#c09090; margin-bottom:22px; line-height:1.6; }
+
+  #victory { background:radial-gradient(ellipse at 50% 40%, #10241a 0%, #030a06 80%); }
+  #victory h1 { font-size:clamp(28px, 7vw, 56px); color:#7fe0a8; text-shadow:0 0 30px #1a7a4a; margin-bottom:14px; }
+  #victory p { color:#a8d4bc; line-height:1.8; margin-bottom:8px; max-width:480px; }
+
+  /* ---------- HUD ---------- */
+  #hud { position:fixed; inset:0; pointer-events:none; z-index:10; }
+  #crosshair { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    font-size:20px; color:rgba(240,230,140,.85); text-shadow:0 0 4px #000; }
+
+  #bars { position:absolute; left:12px; top:calc(10px + env(safe-area-inset-top)); width:min(210px, 42vw); }
+  .bar { height:14px; background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.25); margin-bottom:5px; position:relative; }
+  .bar .fill { position:absolute; inset:1px; transform-origin:left; transition:transform .12s linear; }
+  .bar .lbl { position:absolute; left:4px; top:0; font-size:10px; line-height:13px; color:#fff;
+    text-shadow:0 1px 2px #000; letter-spacing:1px; }
+  #hp-fill { background:linear-gradient(#e05050,#a02020); }
+  #st-fill { background:linear-gradient(#e0c050,#a08820); }
+  #sa-fill { background:linear-gradient(#9a70d8,#5a3a90); }
+
+  #stats { position:absolute; right:12px; top:calc(10px + env(safe-area-inset-top)); text-align:right;
+    font-size:13px; text-shadow:0 1px 3px #000; line-height:1.75; color:#e8dfa0; }
+  #objective { position:absolute; left:50%; top:calc(10px + env(safe-area-inset-top)); transform:translateX(-50%);
+    font-size:13px; color:#7fd4a0; text-shadow:0 1px 3px #000; text-align:center; max-width:60vw; }
+  #weapon-name { color:#c8b860; }
+
+  #msg { position:absolute; left:50%; bottom:26%; transform:translateX(-50%); font-size:16px;
+    color:#f0e68c; text-shadow:0 1px 4px #000; text-align:center; opacity:0; transition:opacity .3s; max-width:86vw; }
+
+  #dmg-vignette { position:absolute; inset:0; pointer-events:none; opacity:0;
+    background:radial-gradient(ellipse at center, transparent 55%, rgba(160,10,10,.75) 100%); transition:opacity .18s; }
+  #sanity-vignette { position:absolute; inset:0; pointer-events:none; opacity:0;
+    background:radial-gradient(ellipse at center, transparent 40%, rgba(30,5,50,.85) 100%); }
+
+  #block-cursor-hint { position:absolute; left:50%; bottom:calc(18px + env(safe-area-inset-bottom));
+    transform:translateX(-50%); font-size:11px; color:#8f854e; text-shadow:0 1px 2px #000; text-align:center; }
+
+  /* ---------- touch controls ---------- */
+  #touch-ui { position:fixed; inset:0; z-index:20; pointer-events:none; display:none; }
+  body.touch #touch-ui { display:block; }
+  body.touch #block-cursor-hint { display:none; }
+
+  #joy-zone { position:absolute; left:0; top:30%; width:45%; height:70%; pointer-events:auto; }
+  #look-zone { position:absolute; right:0; top:0; width:55%; height:100%; pointer-events:auto; }
+  #joy-base { position:absolute; width:110px; height:110px; border-radius:50%; border:2px solid rgba(240,230,140,.35);
+    background:rgba(0,0,0,.25); transform:translate(-50%,-50%); display:none; }
+  #joy-stick { position:absolute; width:48px; height:48px; border-radius:50%;
+    background:rgba(240,230,140,.5); left:50%; top:50%; transform:translate(-50%,-50%); }
+
+  .tbtn { position:absolute; border-radius:50%; border:2px solid rgba(240,230,140,.45);
+    background:rgba(20,18,8,.55); color:#f0e68c; font-family:inherit; font-size:11px; letter-spacing:.5px;
+    pointer-events:auto; display:flex; align-items:center; justify-content:center; flex-direction:column;
+    text-shadow:0 1px 2px #000; }
+  .tbtn:active, .tbtn.held { background:rgba(120,105,40,.6); border-color:#f0e68c; }
+  .tbtn .ico { font-size:22px; line-height:1; }
+  #btn-attack { right:18px; bottom:calc(84px + env(safe-area-inset-bottom)); width:84px; height:84px; }
+  #btn-jump   { right:118px; bottom:calc(30px + env(safe-area-inset-bottom)); width:64px; height:64px; }
+  #btn-place  { right:24px;  bottom:calc(190px + env(safe-area-inset-bottom)); width:60px; height:60px; }
+  #btn-drink  { right:118px; bottom:calc(150px + env(safe-area-inset-bottom)); width:56px; height:56px; }
+
+  #rotate-hint { display:none; }
+  @media (orientation:portrait) {
+    body.touch #rotate-hint { display:block; position:fixed; top:calc(40px + env(safe-area-inset-top));
+      left:50%; transform:translateX(-50%); z-index:60; font-size:11px; color:#8f854e;
+      text-shadow:0 1px 2px #000; pointer-events:none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="game-canvas"></canvas>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+  <div id="sanity-vignette"></div>
+  <div id="dmg-vignette"></div>
+  <div id="crosshair">+</div>
+  <div id="bars">
+    <div class="bar"><div class="fill" id="hp-fill"></div><span class="lbl">VIDA</span></div>
+    <div class="bar"><div class="fill" id="st-fill"></div><span class="lbl">FÔLEGO</span></div>
+    <div class="bar"><div class="fill" id="sa-fill"></div><span class="lbl">SANIDADE</span></div>
+  </div>
+  <div id="objective"></div>
+  <div id="stats">
+    <div id="weapon-name">🔧 Mãos</div>
+    <div id="blocks-count">🧱 0</div>
+    <div id="water-count">🥤 0</div>
+  </div>
+  <div id="msg"></div>
+  <div id="block-cursor-hint">clique: atacar/quebrar · direito: colocar bloco · F: beber água · Shift: correr</div>
+</div>
+
+<!-- Controles de toque -->
+<div id="touch-ui">
+  <div id="rotate-hint">💡 vire o celular na horizontal para jogar melhor</div>
+  <div id="joy-zone">
+    <div id="joy-base"><div id="joy-stick"></div></div>
+  </div>
+  <div id="look-zone"></div>
+  <button class="tbtn" id="btn-attack"><span class="ico">⚔️</span>atacar</button>
+  <button class="tbtn" id="btn-jump"><span class="ico">⬆️</span>pular</button>
+  <button class="tbtn" id="btn-place"><span class="ico">🧱</span>bloco</button>
+  <button class="tbtn" id="btn-drink"><span class="ico">🥤</span>beber</button>
+</div>
+
+<!-- Menu principal -->
+<div id="menu" class="overlay">
+  <h1 class="flicker">BACKROOMS<br>CRAFT</h1>
+  <h2>você atravessou a realidade. agora é você contra o Vazio.</h2>
+  <div id="level-buttons"></div>
+  <div class="note" id="menu-note"></div>
+</div>
+
+<!-- Introdução de nível -->
+<div id="intro" class="overlay hidden">
+  <div class="lvl-tag" id="intro-tag"></div>
+  <h1 id="intro-title"></h1>
+  <p id="intro-desc"></p>
+  <p class="obj" id="intro-obj"></p>
+  <button class="btn" id="intro-start">ENTRAR</button>
+  <p class="tip" id="intro-tip"></p>
+</div>
+
+<!-- Morte -->
+<div id="death" class="overlay hidden">
+  <h1>VOCÊ FOI CONSUMIDO</h1>
+  <p id="death-cause">O Vazio reclamou mais um corpo.</p>
+  <button class="btn" id="death-retry">TENTAR DE NOVO</button>
+  <button class="btn" id="death-menu">VOLTAR AO MENU</button>
+</div>
+
+<!-- Vitória -->
+<div id="victory" class="overlay hidden">
+  <h1>VOCÊ ESCAPOU</h1>
+  <p>O Guardião caiu. A última parede se desfez como fumaça —<br>e do outro lado havia luz de verdade.</p>
+  <p id="victory-stats"></p>
+  <button class="btn" id="victory-menu">VOLTAR AO MENU</button>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./lib/three.module.min.js" } }
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
