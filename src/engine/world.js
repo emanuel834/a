@@ -47,27 +47,31 @@ const FACES = [
 // corrige a ordem de +z para manter winding correto
 FACES[4] = { dir: [0,0,1], corners: [[1,1,1],[0,1,1],[1,0,1],[0,0,1]] };
 
-// hash determinístico p/ "textura" (variação de cor por bloco)
+// variação sutil de tom por bloco (a textura do atlas dá o detalhe fino)
 function jitter(x, y, z, f) {
   let h = (x * 374761393 + y * 668265263 + z * 2147483647 + f * 97) | 0;
   h = (h ^ (h >> 13)) * 1274126177;
   h = (h ^ (h >> 16)) >>> 0;
-  return 0.88 + (h % 1000) / 1000 * 0.18;
+  return 0.97 + (h % 1000) / 1000 * 0.06;
 }
 
+// eixos de UV por face: [índice do eixo u, índice do eixo v] do canto [x,y,z]
+const FACE_UV_AXES = [[2, 1], [2, 1], [0, 2], [0, 2], [0, 1], [0, 1]];
+
 export class World {
-  constructor(scene, sx, sy, sz, palette) {
+  constructor(scene, sx, sy, sz, palette, atlas) {
     this.scene = scene;
     this.sx = sx; this.sy = sy; this.sz = sz;
     this.data = new Uint8Array(sx * sy * sz);
     this.damage = new Map(); // "x,y,z" -> dano acumulado
     this.palette = palette;  // id -> { c:[r,g,b], emissive?:true }
+    this.atlas = atlas;      // { texture, uvRect(id) } de textures.js
     this.cx = Math.ceil(sx / CHUNK);
     this.cz = Math.ceil(sz / CHUNK);
     this.chunkMeshes = new Map(); // "cx,cz" -> [mesh, meshEmissive]
     this.dirty = new Set();
-    this.matLit = new THREE.MeshLambertMaterial({ vertexColors: true });
-    this.matGlow = new THREE.MeshBasicMaterial({ vertexColors: true });
+    this.matLit = new THREE.MeshLambertMaterial({ vertexColors: true, map: atlas?.texture ?? null });
+    this.matGlow = new THREE.MeshBasicMaterial({ vertexColors: true, map: atlas?.texture ?? null });
     this.group = new THREE.Group();
     scene.add(this.group);
   }
@@ -139,8 +143,8 @@ export class World {
       for (const m of old) { this.group.remove(m); m.geometry.dispose(); }
       this.chunkMeshes.delete(key);
     }
-    const lit = { pos: [], col: [], idxs: [] };
-    const glow = { pos: [], col: [], idxs: [] };
+    const lit = { pos: [], col: [], uv: [], idxs: [] };
+    const glow = { pos: [], col: [], uv: [], idxs: [] };
     const x0 = cx * CHUNK, z0 = cz * CHUNK;
     const x1 = Math.min(x0 + CHUNK, this.sx), z1 = Math.min(z0 + CHUNK, this.sz);
 
@@ -163,13 +167,22 @@ export class World {
               // blocos comuns só desenham faces contra o ar (portal cobre a divisa)
               if (nid !== BLOCK.AIR) continue;
             }
-            const shade = info.emissive ? 1.0 : FACE_SHADE[f];
+            // 1.15 compensa o tom médio cinza (~0.85) do atlas na multiplicação
+            const shade = info.emissive ? 1.0 : FACE_SHADE[f] * 1.15;
             const j = jitter(x, y, z, f);
             const r = info.c[0] * shade * j, g = info.c[1] * shade * j, b = info.c[2] * shade * j;
+            const rect = this.atlas ? this.atlas.uvRect(id) : null;
+            const [ua, va] = FACE_UV_AXES[f];
             const base = target.pos.length / 3;
             for (const c of face.corners) {
               target.pos.push(x + c[0], y + c[1], z + c[2]);
               target.col.push(r, g, b);
+              if (rect) {
+                target.uv.push(
+                  rect.u0 + c[ua] * (rect.u1 - rect.u0),
+                  rect.v0 + c[va] * (rect.v1 - rect.v0)
+                );
+              }
             }
             target.idxs.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
           }
@@ -183,6 +196,7 @@ export class World {
       const geo = new THREE.BufferGeometry();
       geo.setAttribute('position', new THREE.Float32BufferAttribute(buf.pos, 3));
       geo.setAttribute('color', new THREE.Float32BufferAttribute(buf.col, 3));
+      if (buf.uv.length) geo.setAttribute('uv', new THREE.Float32BufferAttribute(buf.uv, 2));
       geo.setIndex(buf.idxs);
       geo.computeVertexNormals();
       const mesh = new THREE.Mesh(geo, mat);

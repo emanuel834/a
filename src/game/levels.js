@@ -56,7 +56,7 @@ export const LEVELS = [
     seed: 23,
     fog: { color: 0x1c2024, near: 3, far: 22 },
     ambient: 0x4a5058,
-    ambientIntensity: 1.0,
+    ambientIntensity: 1.35,
     playerLight: { color: 0xcfe0ff, intensity: 9, distance: 10 },
     palette: {
       [BLOCK.FLOOR]: { c: C(0x50565c) },
@@ -92,7 +92,7 @@ export const LEVELS = [
     seed: 37,
     fog: { color: 0x201410, near: 2.5, far: 16 },
     ambient: 0x5a4034,
-    ambientIntensity: 0.95,
+    ambientIntensity: 1.3,
     playerLight: { color: 0xffb070, intensity: 8, distance: 8 },
     palette: {
       [BLOCK.FLOOR]: { c: C(0x4a3a30) },
@@ -126,9 +126,9 @@ export const LEVELS = [
     size: { x: 92, y: 9, z: 92 },
     gen: 'plant',
     seed: 53,
-    fog: { color: 0x101418, near: 3, far: 20 },
-    ambient: 0x3e4a52,
-    ambientIntensity: 1.0,
+    fog: { color: 0x141a20, near: 3, far: 22 },
+    ambient: 0x5c6c7a,
+    ambientIntensity: 1.5,
     playerLight: { color: 0xd0e8ff, intensity: 9, distance: 9 },
     palette: {
       [BLOCK.FLOOR]: { c: C(0x3c4248) },
@@ -166,7 +166,7 @@ export const LEVELS = [
     seed: 66,
     fog: { color: 0x2a0808, near: 4, far: 30 },
     ambient: 0x6a2a2a,
-    ambientIntensity: 1.1,
+    ambientIntensity: 1.35,
     playerLight: { color: 0xffd0b0, intensity: 9, distance: 10 },
     palette: {
       [BLOCK.FLOOR]: { c: C(0x4a2020) },

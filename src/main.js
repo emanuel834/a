@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { World, BLOCK } from './engine/world.js';
+import { buildAtlas } from './engine/textures.js';
 import { Player } from './engine/player.js';
 import { Input } from './engine/input.js';
 import { raycastVoxel } from './engine/raycast.js';
@@ -32,6 +33,7 @@ window.addEventListener('resize', () => {
 
 const hud = new Hud();
 const sfx = new Sfx();
+const atlas = buildAtlas();
 
 const ambient = new THREE.AmbientLight(0xffffff, 1);
 scene.add(ambient);
@@ -118,7 +120,7 @@ function clearLevel() {
 function loadLevel(i) {
   clearLevel();
   level = LEVELS[i];
-  world = new World(scene, level.size.x, level.size.y, level.size.z, level.palette);
+  world = new World(scene, level.size.x, level.size.y, level.size.z, level.palette, atlas);
   levelData = generateLevel(world, level);
   world.buildAll();
 
